@@ -1,0 +1,3 @@
+[submodule "mmo_game_shared"]
+	path = mmo_game_shared
+	url = git@github.com:Jin992/mmo_game_shared.git

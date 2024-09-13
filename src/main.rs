@@ -8,7 +8,7 @@ use bevy::{
 
 mod mmo_client;
 
-use mmo_client::SimpleBoxPlugin;
+use mmo_client::MmoGameClientPlugin;
 
 fn main() {
     App::new()
@@ -21,7 +21,7 @@ fn main() {
             DefaultPlugins,
             RepliconPlugins,
             RepliconRenetPlugins,
-            SimpleBoxPlugin,
+            MmoGameClientPlugin,
         ))
         .run();
 }

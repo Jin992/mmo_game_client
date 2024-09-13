@@ -1528,6 +1528,7 @@ dependencies = [
  "bevy_replicon_renet",
  "bevy_third_person_camera",
  "clap",
+ "mmo_game_shared",
  "serde",
 ]
 
@@ -2679,6 +2680,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e2d80299ef12ff69b16a84bb182e3b9df68b5a91574d3d4fa6e41b65deec4df1"
 dependencies = [
  "adler2",
+]
+
+[[package]]
+name = "mmo_game_shared"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "bevy_replicon",
+ "serde",
 ]
 
 [[package]]

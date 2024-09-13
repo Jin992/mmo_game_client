@@ -1,37 +1,24 @@
 //! A simple demo to showcase how player could send inputs to move the square and server replicates position back.
 //! Also demonstrates the single-player and how sever also could be a player.
 
-// use std::{
-//     error::Error,
-//     net::{IpAddr, Ipv4Addr, SocketAddr, UdpSocket},
-//     time::SystemTime,
-// };
-
 use std::net::{IpAddr, Ipv4Addr, SocketAddr, UdpSocket};
 use std::time::SystemTime;
-use bevy::{
-    color::palettes::css::GREEN,
-    prelude::*,
-    winit::{UpdateMode::Continuous, WinitSettings},
-};
+use bevy::prelude::*;
 use bevy_replicon::prelude::*;
-pub use bevy_renet::renet;
 use bevy_replicon_renet::{
     renet::{
         transport::{
-            ClientAuthentication, NetcodeClientTransport, NetcodeServerTransport,
-            ServerAuthentication, ServerConfig,
+            ClientAuthentication, NetcodeClientTransport,
         },
-        ConnectionConfig, RenetClient, RenetServer,
+        ConnectionConfig, RenetClient,
     },
-    RenetChannelsExt, RepliconRenetPlugins,
+    RenetChannelsExt,
 };
-use clap::Parser;
-use serde::{Deserialize, Serialize};
+use mmo_game_shared::components::*;
 
-pub(crate) struct SimpleBoxPlugin;
+pub(crate) struct MmoGameClientPlugin;
 
-impl Plugin for SimpleBoxPlugin {
+impl Plugin for MmoGameClientPlugin {
     fn build(&self, app: &mut App) {
         app.replicate::<PlayerPosition>()
             .replicate::<PlayerColor>()
@@ -48,7 +35,7 @@ impl Plugin for SimpleBoxPlugin {
     }
 }
 
-impl SimpleBoxPlugin {
+impl MmoGameClientPlugin {
     fn connect(mut commands: Commands, channels: Res<RepliconChannels>,) {
         let server_channels_config = channels.get_server_configs();
         let client_channels_config = channels.get_client_configs();
@@ -112,17 +99,13 @@ impl SimpleBoxPlugin {
         }
     }
 
-    fn draw_box_text() {
-
-    }
-
     fn draw_boxes(mut gizmos: Gizmos, players: Query<(&PlayerPosition, &PlayerColor)>) {
         for (position, color) in &players {
             gizmos.rect(
                 Vec3::new(position.x, position.y, 0.0),
                 Quat::IDENTITY,
                 Vec2::ONE * 50.0,
-                color.0,
+                color.color,
             );
         }
     }
@@ -143,7 +126,7 @@ impl SimpleBoxPlugin {
             direction.y -= 1.0;
         }
         if direction != Vec2::ZERO {
-            move_events.send(MoveDirection(direction.normalize_or_zero()));
+            move_events.send(MoveDirection{direction:direction.normalize_or_zero()});
         }
     }
 
@@ -160,8 +143,8 @@ impl SimpleBoxPlugin {
         for FromClient { client_id, event } in move_events.read() {
             info!("received event {event:?} from {client_id:?}");
             for (player, mut position) in &mut players {
-                if *client_id == player.0 {
-                    **position += event.0 * time.delta_seconds() * MOVE_SPEED;
+                if *client_id == player.client_id {
+                    **position += event.direction * time.delta_seconds() * MOVE_SPEED;
                 }
             }
         }
@@ -182,24 +165,10 @@ struct PlayerBundle {
 impl PlayerBundle {
     fn new(client_id: ClientId, position: Vec2, color: Color) -> Self {
         Self {
-            player: Player(client_id),
-            position: PlayerPosition(position),
-            color: PlayerColor(color),
+            player: Player{client_id},
+            position: PlayerPosition{position},
+            color: PlayerColor{color},
             replicated: Replicated,
         }
     }
 }
-
-/// Contains the client ID of a player.
-#[derive(Component, Serialize, Deserialize)]
-struct Player(ClientId);
-
-#[derive(Component, Deserialize, Serialize, Deref, DerefMut)]
-struct PlayerPosition(Vec2);
-
-#[derive(Component, Deserialize, Serialize)]
-struct PlayerColor(Color);
-
-/// A movement event for the controlled box.
-#[derive(Debug, Default, Deserialize, Event, Serialize)]
-struct MoveDirection(Vec2);
